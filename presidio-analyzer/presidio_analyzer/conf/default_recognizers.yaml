@@ -600,4 +600,5 @@ recognizers:
     - en
     - fr
     type: predefined
+    enabled: false
     country_code: fr

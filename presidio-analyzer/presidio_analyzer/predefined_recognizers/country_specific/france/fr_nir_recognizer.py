@@ -6,7 +6,7 @@ from presidio_analyzer import Pattern, PatternRecognizer
 
 
 class FrNirRecognizer(PatternRecognizer):
-    """Recognize the French NIR / social security number (numéro de sécurité sociale).
+    """Recognize the French NIR / social security number using regex + checksum.
 
     The NIR is a 15-digit identifier: 13 significant digits (sex, year and month
     of birth, department/country of birth, commune/country code, order number)
@@ -29,15 +29,10 @@ class FrNirRecognizer(PatternRecognizer):
 
     PATTERNS = [
         Pattern(
-            "NIR (weak, compact)",
-            r"\b[12]\d{2}(?:0[1-9]|1[0-2]|[2-9]\d)\d{2}\d{3}\d{3}\d{2}\b",
-            0.3,
-        ),
-        Pattern(
-            "NIR (medium, grouped/spaced)",
+            "NIR (France)",
             r"\b[12][ .]?\d{2}[ .]?(?:0[1-9]|1[0-2]|[2-9]\d)[ .]?"
             r"(?:\d{2}|2[AB])[ .]?\d{3}[ .]?\d{3}[ .]?\d{2}\b",
-            0.5,
+            0.4,
         ),
     ]
 
@@ -74,20 +69,12 @@ class FrNirRecognizer(PatternRecognizer):
             name=name,
         )
 
-    def invalidate_result(self, pattern_text: str) -> bool:
-        """
-        Check if the pattern text cannot be validated as a FR_NIR entity.
-
-        Validates the 15-digit structure and the mod-97 checksum.
-
-        :param pattern_text: Text detected as pattern by regex
-        :return: True if invalidated
-        """
+    def validate_result(self, pattern_text: str) -> bool:  # noqa: D102
         cleaned = (
             pattern_text.replace(" ", "").replace(".", "").replace("-", "").upper()
         )
         if len(cleaned) != 15:
-            return True
+            return False
 
         digits_part = cleaned[:13]
         key_part = cleaned[13:15]
@@ -95,7 +82,7 @@ class FrNirRecognizer(PatternRecognizer):
         # Corsican department substitution for checksum purposes: 2A -> 19, 2B -> 18
         checksum_input = digits_part.replace("2A", "19").replace("2B", "18")
         if not checksum_input.isdigit() or not key_part.isdigit():
-            return True
+            return False
 
         computed_key = 97 - (int(checksum_input) % 97)
-        return computed_key != int(key_part)
+        return computed_key == int(key_part)
