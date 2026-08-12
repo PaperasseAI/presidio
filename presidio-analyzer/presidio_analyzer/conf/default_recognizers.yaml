@@ -621,5 +621,10 @@ recognizers:
     - en
     - fr
     type: predefined
-    enabled: false
+    # enabled:false is the upstream convention for country-specific
+    # recognizers, and the paperasse-fr-nir topic branch keeps it so the
+    # upstream PR follows the house rules. This integration branch flips it
+    # because paperasse deployments exist to serve French documents -- the
+    # whole reason the recognizer was written.
+    enabled: true
     country_code: fr
